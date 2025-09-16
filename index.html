@@ -1,0 +1,2434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Firm Productivity Calendar</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      min-height: 100vh;
+      padding: 20px;
+      transition: background 0.5s ease;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .disciplined {
+      font-weight: bolder;
+      font-size: medium;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .status-panel {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .total-tasks {
+      font-size: 1.8em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .heat-containers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .heat-container {
+      background: #ffd700;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      transition: all 0.5s ease;
+      transform: translateY(0);
+    }
+
+    .heat-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .container-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.2em;
+    }
+
+    .heat-bar {
+      width: 100%;
+      height: 30px;
+      background: rgba(255,255,255,0.3);
+      margin: 15px 0;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    h6 {
+      color: gold;
+    }
+
+    .heat-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.5s ease, background 0.5s ease;
+      border-radius: 15px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+    }
+
+    .task-count {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #333;
+      font-weight: bold;
+      font-size: 0.9em;
+      text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+    }
+
+    .mascot {
+      font-size: 1.1em;
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 10px;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-weight: 600;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Color states based on task count */
+    .heat-gold { background: linear-gradient(135deg, #ffd700, #ffed4e); }
+    .heat-lightblue { background: linear-gradient(135deg, #87CEEB, #ADD8E6); }
+    .heat-darkblue { background: linear-gradient(135deg, #4169E1, #1E90FF); }
+    .heat-red { background: linear-gradient(135deg, #FF6B6B, #FF5252); }
+    .heat-darkred { background: linear-gradient(135deg, #DC143C, #B22222); }
+    .heat-darkestred { background: linear-gradient(135deg, #8B0000, #660000); }
+    .heat-negative1 { background: linear-gradient(135deg, #704B4B, #5A3A3A); }
+    .heat-negative2 { background: linear-gradient(135deg, #4A3B3B, #3A2B2B); }
+    .heat-negative3 { background: linear-gradient(135deg, #3A2B2B, #2A1B1B); }
+    .heat-negative4 { background: linear-gradient(135deg, #2A1B1B, #1A0B0B); }
+    .heat-negative5 { background: linear-gradient(135deg, #1A0B0B, #0A0000); }
+    .heat-black { background: linear-gradient(135deg, #000000, #0A0A0A); }
+
+    .legend {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .legend h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .fire {
+      text-align: center;
+      font-size: 4pc;
+      color: #00FFFF;
+    }
+
+    .discipline {
+      background: linear-gradient(135deg, #f0f4ff, #e0eaff);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      max-width: 800px;
+      margin: 40px auto;
+      font-family: 'Segoe UI', sans-serif;
+      color: #2c3e50;
+      transition: all 0.3s ease;
+    }
+
+    .discipline ul {
+      list-style-type: disc;
+      padding-left: 20px;
+      line-height: 1.8;
+    }
+
+    .discipline li {
+      margin-bottom: 12px;
+      position: relative;
+      padding-left: 10px;
+    }
+
+    .discipline li::marker {
+      color: #4a90e2;
+      font-size: 1.2em;
+    }
+
+    .discipline:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    .workharder {
+      font-weight: 900;
+    }
+
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      font-size: 0.9em;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .leaderboard {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .leaderboard h2 {
+      color: #333;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .survival{
+    color: #1E90FF;
+    background-color: linear-gradient gold;
+    }
+
+
+    .leaderboard ol {
+      padding-left: 20px;
+    }
+
+    .leaderboard li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 1.1em;
+    }
+
+    .leaderboard li:first-child {
+      color: #FFD700;
+      font-weight: bold;
+    }
+
+    .leaderboard li:nth-child(2) {
+      color: #C0C0C0;
+      font-weight: bold;
+    }
+
+    .leaderboard li:nth-child(3) {
+      color: #CD7F32;
+      font-weight: bold;
+    }
+
+    #unseen {
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px auto;
+      max-width: 600px;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+
+   #gold{
+    color: gold;
+   }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .critical {
+      animation: pulse 1s infinite;
+    }
+
+    @media (max-width: 768px) {
+      .heat-containers-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .fire {
+        font-size: 2pc;
+      }
+      
+      .discipline {
+        margin: 20px 10px;
+        padding: 16px;
+      }
+    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .system-status {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 5px;
+            min-width: 200px;
+        }
+
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .department-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .department-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .dept-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .dept-title {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .dept-status {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .dept-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .calendar-section {
+            margin-bottom: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .calendar-header h4 {
+            font-size: 1.1em;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            font-size: 0.85em;
+        }
+
+        .day-header {
+            text-align: center;
+            padding: 8px 4px;
+            font-weight: bold;
+            background: #e9ecef;
+            font-size: 0.8em;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            border: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            position: relative;
+            min-height: 40px;
+        }
+
+        .day-cell:hover {
+            background: #f8f9fa;
+            transform: scale(1.05);
+        }
+
+        .day-cell.today {
+            border: 2px solid #667eea;
+        }
+
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 2px;
+            font-size: 0.9em;
+        }
+
+        .task-count {
+            font-size: 0.7em;
+            padding: 2px 5px;
+            border-radius: 8px;
+            color: white;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        /* Heat Map Colors */
+        .heat-0 { background-color: #ffd700; } /* Golden */
+        .heat-1 { background-color: #87ceeb; } /* Light Blue */
+        .heat-2 { background-color: #4169e1; } /* Dark Blue */
+        .heat-3 { background-color: #ff6b6b; } /* Red */
+        .heat-4 { background-color: #ff4757; } /* Dark Red */
+        .heat-5 { background-color: #c44569; } /* Darkest Red */
+        .heat-6 { background-color: #2f3542; color: white; } /* Negative */
+        .heat-11 { background-color: #000000; color: white; } /* Critical */
+
+        .task-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .task-form h5 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .form-group textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: transform 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .task-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .task-item {
+            background: white;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+        }
+
+        .task-item.completed {
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+
+        .task-info {
+            flex-grow: 1;
+        }
+
+
+
+
+        .l{
+        font-size: 5px solid black;
+        font-weight: bolder;
+
+        }
+
+
+        .task-title {
+            font-weight: bold;
+        }
+
+        .task-meta {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .task-priority {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            margin-right: 5px;
+        }
+
+        .priority-low {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .priority-medium {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .priority-high {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .delete-btn, .edit-btn, .complete-btn {
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            border: none;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+        }
+
+        .edit-btn {
+            background: #ffa502;
+            color: white;
+        }
+
+        .complete-btn {
+            background: #2ed573;
+            color: white;
+        }
+
+        .legend-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            font-size: 0.8em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Department specific colors */
+        .dept-alpha .dept-header { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        .dept-beta .dept-header { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+        .dept-gamma .dept-header { background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); }
+        .dept-delta .dept-header { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        .dept-epsilon .dept-header { background: linear-gradient(135deg, #ff8a80 0%, #ff80ab 100%); }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        /* Drag and drop styles */
+        .day-cell.drag-over {
+            background-color: #e6f7ff;
+            border: 2px dashed #1890ff;
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+        }
+
+        @media (max-width: 1400px) {
+            .departments-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .departments-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .system-status {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .dept-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .legend-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    .logo-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 9pc;   /* adjust size */
+  height: 10pc;  /* keep it square */
+  border-radius: 12px; /* rounded edges, optional */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* optional shadow */
+}
+  </style>
+    <style>
+    /* Your existing styles here */
+    
+    /* New styles for rewards system */
+    .rewards-panel {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .rewards-container {
+      display: flex;
+      overflow-x: auto;
+      gap: 15px;
+      padding: 10px 0;
+    }
+    
+    .reward-item {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 15px;
+      min-width: 150px;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+    
+    .reward-icon {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    
+    .points-display {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px 15px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    
+    .leaderboard-enhanced {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .leaderboard-enhanced h2 {
+      color: #333;
+      margin-bottom: 15px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+    
+    .leaderboard-rank {
+      font-weight: bold;
+      width: 30px;
+      color: #555;
+    }
+    
+    .leaderboard-name {
+      flex-grow: 1;
+      padding: 0 15px;
+    }
+    
+    .leaderboard-points {
+      background: #f0f4ff;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-weight: bold;
+      color: #4facfe;
+    }
+    
+    .crown {
+      color: gold;
+      font-size: 1.5em;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="logo-header">
+      <img src="WhatsApp Image 2025-09-16 at 14.26.52.jpeg""Firm logo"
+      class="logo">
+    </div>
+    <h1>📅 Firm Productivity Calendar</h1>
+    
+    <div class="status-panel">
+      <div class="total-tasks">Total Background Tasks: <span id="bgTaskCount">0</span> / 125</div>
+      <div>System Status: <span id="systemStatus">✨ Optimal Performance</span></div>
+    </div>
+
+    <div class="heat-containers-grid">
+      <!-- Container 1 -->
+      <div class="heat-container heat-gold" id="container1">
+        <div class="container-title">🏢 Department Alpha</div>
+        <div class="heat-bar">
+          <div class="heat-fill" id="heatFill1"></div>
+          <div class="task-count">Tasks: <span id="taskCount1">0</span>/25</div>
+        </div>
+        <div class="mascot" id="mascot1">🦉 Ready to begin!</div>
+        <div class="button-group">
+          <button onclick="logTask(1)">➕ Add Task</button>
+          <button onclick="completeTask(1)">✅ Complete</button>
+        </div>
+      </div>
+
+      <!-- Container 2 -->
+      <div class="heat-container heat-gold" id="container2">
+        <div class="container-title">💼 Department Beta</div>
+        <div class="heat-bar">
+          <div class="heat-fill" id="heatFill2"></div>
+          <div class="task-count">Tasks: <span id="taskCount2">0</span>/25</div>
+        </div>
+        <div class="mascot" id="mascot2">🦉 Standing by for action!</div>
+        <div class="button-group">
+          <button onclick="logTask(2)">➕ Add Task</button>
+          <button onclick="completeTask(2)">✅ Complete</button>
+        </div>
+      </div>
+
+      <!-- Container 3 -->
+      <div class="heat-container heat-gold" id="container3">
+        <div class="container-title">🚀 Department Gamma</div>
+        <div class="heat-bar">
+          <div class="heat-fill" id="heatFill3"></div>
+          <div class="task-count">Tasks: <span id="taskCount3">0</span>/25</div>
+        </div>
+        <div class="mascot" id="mascot3">🦉 Let's achieve greatness!</div>
+        <div class="button-group">
+          <button onclick="logTask(3)">➕ Add Task</button>
+          <button onclick="completeTask(3)">✅ Complete</button>
+        </div>
+      </div>
+
+      <!-- Container 4 -->
+      <div class="heat-container heat-gold" id="container4">
+        <div class="container-title">⚡ Department Delta</div>
+        <div class="heat-bar">
+          <div class="heat-fill" id="heatFill4"></div>
+          <div class="task-count">Tasks: <span id="taskCount4">0</span>/25</div>
+        </div>
+        <div class="mascot" id="mascot4">🦉 Excellence awaits!</div>
+        <div class="button-group">
+          <button onclick="logTask(4)">➕ Add Task</button>
+          <button onclick="completeTask(4)">✅ Complete</button>
+        </div>
+      </div>
+
+      <!-- Container 5 -->
+      <div class="heat-container heat-gold" id="container5">
+        <div class="container-title">🎯 Department Epsilon</div>
+        <div class="heat-bar">
+          <div class="heat-fill" id="heatFill5"></div>
+          <div class="task-count">Tasks: <span id="taskCount5">0</span>/25</div>
+        </div>
+        <div class="mascot" id="mascot5">🦉 Success is our mission!</div>
+        <div class="button-group">
+          <button onclick="logTask(5)">➕ Add Task</button>
+          <button onclick="completeTask(5)">✅ Complete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <h3>🎨 Heat Map Legend</h3>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #ffd700, #ffed4e);"></div>
+          <span>0 tasks - Golden (Optimal)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #87CEEB, #ADD8E6);"></div>
+          <span>1 task - Light Blue</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #4169E1, #1E90FF);"></div>
+          <span>2 tasks - Dark Blue</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #FF6B6B, #FF5252);"></div>
+          <span>3 tasks - Red</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #DC143C, #B22222);"></div>
+          <span>4 tasks - Dark Red</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #8B0000, #660000);"></div>
+          <span>5 tasks - Darkest Red</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #704B4B, #5A3A3A);"></div>
+          <span>6-10 tasks - Negative</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: linear-gradient(135deg, #000000, #0A0A0A);"></div>
+          <span>11+ tasks - Black (Critical)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="leaderboard" id="leaderboard">
+      <h2>🏆 Department Leaderboard</h2>
+      <ol id="leaderboardList">
+        <li>Department Alpha — 0/25 tasks</li>
+        <li>Department Beta — 0/25 tasks</li>
+        <li>Department Gamma — 0/25 tasks</li>
+        <li>Department Delta — 0/25 tasks</li>
+        <li>Department Epsilon — 0/25 tasks</li>
+      </ol>
+    </div>
+  </div>
+  <div class="survival gold">
+<h1>⏫HIGHER LEADERBOARD,BIGGER INCREMENT⏫</h1>
+<h1>⏬SMALLER LEADERBOARD,SMALLER INCREMENT⏬</h1>
+<h2>demotion of classes is possible</h2>
+<h6>MAXIMUM POSSIBLE INCREMENT=2K</h6>
+<h6>MINIMUM POSSIBLE INCREMENT=0</h6>
+<h6>possiblity of variation of bonuses</h6>
+<h5>higher class,skills benfits:
+  <li>higher job security</li>
+  <li>better job experience</li>
+  <li>higher possiblity of increments</li>
+  <li>bigger increments</li>
+  <li>bigger bonuses</li>
+  <li>higher possiblity of bonuses</li>
+  <li>better facilities</li>
+  <li>better job standard</li>
+ REQUIREMENTS(only for increments and bonuses):
+ <li>the person does not have any due tasks left and has been in the top 3 leaderboard</li>
+ <li>knows the basic forms of all their skills</li>
+ <li>has a minimum of 3 skills</li>
+ <li>has more experience than 2 years</li>
+ <li>is having a class higher than 4</li>
+ <li>is fluent is communication</li>
+ <li>can analyze minimalistic data</li>
+ <li>has been voted for increment by a minimum of 2 colleagues</li>
+ <li>can act as both junior and senior person easily</li>
+ <li>is polite and efficient for the past 21 days</li>
+</h5>
+<h4 class="survival">
+  SKILLS:
+
+  <li class="survival">ALPHA:Lorem ipsum dolor sit amet consectetur adipisicing elit. Repellendus rem possimus doloribus illo ratione eum pariatur omnis ipsam id veritatis iste quae itaque excepturi corrupti alias, autem similique mollitia neque!</li>
+  <li class="survival">BETA:Lorem, ipsum dolor sit amet consectetur adipisicing elit. Cupiditate tempora placeat, porro labore magnam excepturi, itaque dolores, veniam ea vero fugit. A dolore quam saepe nemo repudiandae minus numquam expedita.</li>
+  <li class="survival">GAMMA:Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid quidem quas recusandae et id officia, qui excepturi, quos voluptatibus nisi, odio velit eligendi accusantium! Necessitatibus esse quibusdam nesciunt quaerat est.</li>
+  <li class="survival">DELTA:Lorem ipsum dolor, sit amet consectetur adipisicing elit. Laudantium, eveniet debitis quia quam nemo perferendis, rerum ducimus doloremque dolores, ullam officia dolorem maiores modi quos aspernatur eius. Praesentium, eaque pariatur?</li>
+  <li class="survival">EPSILON:Lorem ipsum dolor sit amet consectetur adipisicing elit. Quae fugit rem illum architecto ex quod illo, non facere veniam nostrum quasi porro assumenda molestiae dolorem repellendus ratione id provident laboriosam.</li>
+</div>
+<ul class="survival"><li>class demotion leads to lower increase in increment and bonuses</li></ul>
+<ul class="survival"><li>increase and decrease in bonuses and salary is possible on the variation of classes and leaderboard</li></ul>
+</h4>
+  <div class="fire workharder">SUPER TIPS AND TRICKS</div>
+  <div class="discipline">
+    <ul>
+      <li>Define daily and weekly goals — distinguish must-do tasks from those that can wait.</li>
+      <li>Set routines to automate tasks rather than relying solely on willpower.</li>
+      <li>Celebrate small wins to maintain motivation.</li>
+      <li>Use Time Blocking: Assign specific time slots for different tasks like client calls, audits, and reporting.</li>
+      <li>Apply the 2-Minute Rule: If a task takes less than 2 minutes, complete it immediately.</li>
+      <li>Batch Similar Tasks to avoid context switching and improve efficiency.</li>
+      <li>Set self-imposed deadlines to maintain momentum.</li>
+      <li>Use accounting software and templates to reduce manual work.</li>
+      <li>Schedule Deep Work sessions for uninterrupted focus.</li>
+      <li>Hold a Weekly Review to track progress and remove obstacles.</li>
+      <li>Use Checklists for recurring tasks to ensure accuracy.</li>
+      <li>Work smart, not just hard — efficiency is a learned skill.</li>
+      <li>Focus on high-impact tasks rather than trying to do everything at once.</li>
+      <li>Maintain open communication to align on goals and resolve issues faster.</li>
+      <li>Take mindful breaks to refresh energy and prevent burnout.</li>
+      <li>Support team members through accountability and encouragement.</li>
+      <li>Accept imperfection and prioritize action over hesitation.</li>
+      <li>Remember that your work shapes businesses and builds trust.</li>
+      <li>Stay disciplined, supportive, and focused on the bigger purpose.</li>
+      <li>Consistency + Clarity + Collaboration = Excellence.</li>
+    </ul>
+  </div>
+
+  <div id="unseen">Hey, whoever has least tasks in the day gets praised!</div>
+
+  <script>
+    // Initialize task counts for each container
+    const containers = {
+      1: { tasks: 0, maxTasks: 25, name: 'Alpha' },
+      2: { tasks: 0, maxTasks: 25, name: 'Beta' },
+      3: { tasks: 0, maxTasks: 25, name: 'Gamma' },
+      4: { tasks: 0, maxTasks: 25, name: 'Delta' },
+      5: { tasks: 0, maxTasks: 25, name: 'Epsilon' }
+    };
+
+    let totalBackgroundTasks = 0;
+    const maxBackgroundTasks = 125;
+
+    function getColorClass(taskCount) {
+      if (taskCount === 0) return 'heat-gold';
+      if (taskCount === 1) return 'heat-lightblue';
+      if (taskCount === 2) return 'heat-darkblue';
+      if (taskCount === 3) return 'heat-red';
+      if (taskCount === 4) return 'heat-darkred';
+      if (taskCount === 5) return 'heat-darkestred';
+      if (taskCount === 6) return 'heat-negative1';
+      if (taskCount === 7) return 'heat-negative2';
+      if (taskCount === 8) return 'heat-negative3';
+      if (taskCount === 9) return 'heat-negative4';
+      if (taskCount === 10) return 'heat-negative5';
+      return 'heat-black';
+    }
+
+    function getMascotMessage(taskCount) {
+      if (taskCount === 0) return '✨ Perfect! Zero stress zone! KEEP up the GOOD WORK! ✨';
+      if (taskCount === 1) return '🦉 Light workload, smooth sailing! LETS GO GOLDEN! ONE MORE TO GO!';
+      if (taskCount === 2) return '💪 Manageable tasks, keep going! YOU ARE DOING WELL!';
+      if (taskCount === 3) return '⚠️ Getting busy, stay focused! Work harder!';
+      if (taskCount === 4) return '🔥 High pressure, prioritize importance!';
+      if (taskCount === 5) return '🚨 Critical load, act fast!';
+      if (taskCount === 6) return 'Still not understanding?';
+      if (taskCount === 7) return 'Can you even do something? It is boring not to WORK HARD!';
+      if (taskCount === 8) return 'Why are you even here? Just start! Are you worthless or what?';
+      if (taskCount === 9) return 'System final alert! Finish a task before it explodes!';
+      if (taskCount === 10) return '⚡ Danger zone! Immediate action needed!';
+      if (taskCount >= 20) return 'FINAL COUNTDOWN! YOU HAVE 50 MINUTES BEFORE THE SYSTEM EXPLODES!';
+      if (taskCount >= 11) return 'SYSTEM OVERLOADED! COUNTDOWN BEGUN! FINAL WARNING!';
+      return '☠️ SYSTEM OVERLOAD! Emergency mode!';
+    }
+
+    function updateBackgroundColor() {
+      if (totalBackgroundTasks === 0) {
+        document.body.style.background = 'linear-gradient(135deg, #ffd700, #ffed4e)';
+      } else if (totalBackgroundTasks <= 25) {
+        document.body.style.background = 'linear-gradient(135deg, #87CEEB, #ADD8E6)';
+      } else if (totalBackgroundTasks <= 50) {
+        document.body.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+      } else if (totalBackgroundTasks <= 75) {
+        document.body.style.background = 'linear-gradient(135deg, #FF6B6B, #FF5252)';
+      } else if (totalBackgroundTasks <= 100) {
+        document.body.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
+      } else {
+        document.body.style.background = 'linear-gradient(135deg, #8B0000, #660000)';
+      }
+
+      // Update system status
+      const statusEl = document.getElementById('systemStatus');
+      if (totalBackgroundTasks === 0) {
+        statusEl.textContent = '✨ Optimal Performance';
+      } else if (totalBackgroundTasks <= 25) {
+        statusEl.textContent = '✅ System Running Smoothly';
+      } else if (totalBackgroundTasks <= 50) {
+        statusEl.textContent = '⚠️ System Under Pressure';
+      } else if (totalBackgroundTasks <= 100) {
+        statusEl.textContent = '🔥 Critical Load Detected';
+      } else {
+        statusEl.textContent = '🚨 MAXIMUM CAPACITY REACHED';
+      }
+    }
+
+    function updateContainer(id) {
+      const container = containers[id];
+      const containerEl = document.getElementById(`container${id}`);
+      const heatFill = document.getElementById(`heatFill${id}`);
+      const taskCount = document.getElementById(`taskCount${id}`);
+      const mascot = document.getElementById(`mascot${id}`);
+
+      // Update task count display
+      taskCount.textContent = `${container.tasks}/25`;
+
+      // Update heat bar fill
+      const fillPercentage = (container.tasks / container.maxTasks) * 100;
+      heatFill.style.width = `${fillPercentage}%`;
+
+      // Remove all color classes
+      containerEl.className = 'heat-container';
+      
+      // Add appropriate color class
+      const colorClass = getColorClass(container.tasks);
+      containerEl.classList.add(colorClass);
+
+      // Add pulse animation for critical states
+      if (container.tasks >= 11) {
+        containerEl.classList.add('critical');
+      }
+
+      // Update mascot message
+      mascot.textContent = getMascotMessage(container.tasks);
+
+      // Update heat fill gradient
+      if (container.tasks === 0) {
+        heatFill.style.background = 'linear-gradient(90deg, rgba(255,215,0,0.8), rgba(255,237,78,0.6))';
+      } else if (container.tasks <= 5) {
+        heatFill.style.background = 'linear-gradient(90deg, rgba(255,255,255,0.4), rgba(255,255,255,0.2))';
+      } else {
+        heatFill.style.background = 'linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4))';
+      }
+    }
+
+    function updateLeaderboard() {
+      const deptData = [];
+      for (let i = 1; i <= 5; i++) {
+        deptData.push({
+          name: containers[i].name,
+          tasks: containers[i].tasks,
+          max: containers[i].maxTasks
+        });
+      }
+
+      // Sort by fewest tasks (best first)
+      deptData.sort((a, b) => a.tasks - b.tasks);
+
+      // Update leaderboard HTML
+      const leaderboardList = document.getElementById('leaderboardList');
+      leaderboardList.innerHTML = deptData
+        .map(d => `<li>Department ${d.name} — ${d.tasks}/${d.max} tasks</li>`)
+        .join('');
+    }
+
+    function logTask(id) {
+      if (containers[id].tasks < containers[id].maxTasks && totalBackgroundTasks < maxBackgroundTasks) {
+        containers[id].tasks++;
+        totalBackgroundTasks++;
+        updateContainer(id);
+        updateBackgroundColor();
+        updateLeaderboard();
+        document.getElementById('bgTaskCount').textContent = totalBackgroundTasks;
+      } else if (totalBackgroundTasks >= maxBackgroundTasks) {
+        alert('⚠️ Maximum background task limit (125) reached! Complete some tasks first.');
+      } else {
+        alert('⚠️ This container has reached its maximum capacity! FINISH some tasks to add new ones or the system will explode!');
+      }
+    }
+
+    function completeTask(id) {
+      if (containers[id].tasks > 0) {
+        containers[id].tasks--;
+        totalBackgroundTasks--;
+        updateContainer(id);
+        updateBackgroundColor();
+        updateLeaderboard();
+        document.getElementById('bgTaskCount').textContent = totalBackgroundTasks;
+      }
+    }
+
+    // Initialize all containers on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      for (let i = 1; i <= 5; i++) {
+        updateContainer(i);
+      }
+      updateBackgroundColor();
+      updateLeaderboard();
+      document.getElementById('bgTaskCount').textContent = totalBackgroundTasks;
+    });
+  </script>
+  <div class="box">
+    ABOUT THE SCRIPTMAKER:
+    GENIUS SUCCESSFUL TEENAGER FRONTEND WEB DEVELOPER FREELANCER VIDEO EDITOR YOUTUBER SCRIPTER WRITER LEARNER
+    <li>contact:CONTACT ME ON GITHUB FOR ANY FORMS OF PERSONAL PROJECT</li> 
+  </div>
+
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 CA Unified Department Productivity Calendar</h1>
+            <div class="system-status">
+                <div class="status-item">
+                    <strong>Total System Tasks:</strong> <span id="totalTasks">0</span> / 250
+                </div>
+                <div class="status-item">
+                    <strong>System Status:</strong> <span id="systemStatus">✨ Optimal Performance</span>
+                </div>
+                <div class="status-item">
+                    <strong>Active Departments:</strong> <span id="activeDepts">5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heat Map Legend (Global) -->
+        <div class="legend-section">
+            <h4>🎨 Heat Map Legend</h4>
+            <div class="legend-grid">
+                <div class="legend-item"><div class="legend-color heat-0"></div>0 tasks - Golden (Optimal)</div>
+                <div class="legend-item"><div class="legend-color heat-1"></div>1 task - Light Blue</div>
+                <div class="legend-item"><div class="legend-color heat-2"></div>2 tasks - Dark Blue</div>
+                <div class="legend-item"><div class="legend-color heat-3"></div>3 tasks - Red</div>
+                <div class="legend-item"><div class="legend-color heat-4"></div>4 tasks - Dark Red</div>
+                <div class="legend-item"><div class="legend-color heat-5"></div>5 tasks - Darkest Red</div>
+                <div class="legend-item"><div class="legend-color heat-6"></div>6-10 tasks - Negative</div>
+                <div class="legend-item"><div class="legend-color heat-11"></div>11+ tasks - Black (Critical)</div>
+            </div>
+        </div>
+
+        <div class="departments-grid">
+            <!-- Department Alpha -->
+            <div class="department-card dept-alpha" id="alpha-card">
+                <div class="dept-header">
+                    <div class="dept-title">🏢 Department Alpha</div>
+                    <div class="dept-status">Ready to begin!</div>
+                </div>
+                
+                <div class="dept-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="alpha-tasks">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="alpha-completed">0</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="alpha-efficiency">100%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" onclick="changeMonth(-1, 'alpha')">❮</button>
+                        <h4 id="alpha-month-year">December 2024</h4>
+                        <button class="nav-btn" onclick="changeMonth(1, 'alpha')">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="alpha-calendar"></div>
+                </div>
+
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-dept="alpha" data-filter="all">All Tasks</button>
+                    <button class="filter-btn" data-dept="alpha" data-filter="low">Low Priority</button>
+                    <button class="filter-btn" data-dept="alpha" data-filter="medium">Medium Priority</button>
+                    <button class="filter-btn" data-dept="alpha" data-filter="high">High Priority</button>
+                </div>
+
+                <div class="task-form">
+                    <h5>Add New Task</h5>
+                    <form onsubmit="addTask(event, 'alpha')">
+                        <div class="form-group">
+                            <label>Task:</label>
+                            <input type="text" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <textarea name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority:</label>
+                            <select name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Add Task</button>
+                    </form>
+                </div>
+                
+                <div class="task-list" id="alpha-tasks-list"></div>
+            </div>
+
+            <!-- Department Beta -->
+            <div class="department-card dept-beta" id="beta-card">
+                <div class="dept-header">
+                    <div class="dept-title">💼 Department Beta</div>
+                    <div class="dept-status">Standing by for action!</div>
+                </div>
+                
+                <div class="dept-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="beta-tasks">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="beta-completed">0</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="beta-efficiency">100%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" onclick="changeMonth(-1, 'beta')">❮</button>
+                        <h4 id="beta-month-year">December 2024</h4>
+                        <button class="nav-btn" onclick="changeMonth(1, 'beta')">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="beta-calendar"></div>
+                </div>
+
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-dept="beta" data-filter="all">All Tasks</button>
+                    <button class="filter-btn" data-dept="beta" data-filter="low">Low Priority</button>
+                    <button class="filter-btn" data-dept="beta" data-filter="medium">Medium Priority</button>
+                    <button class="filter-btn" data-dept="beta" data-filter="high">High Priority</button>
+                </div>
+
+                <div class="task-form">
+                    <h5>Add New Task</h5>
+                    <form onsubmit="addTask(event, 'beta')">
+                        <div class="form-group">
+                            <label>Task:</label>
+                            <input type="text" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <textarea name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority:</label>
+                            <select name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Add Task</button>
+                    </form>
+                </div>
+                
+                <div class="task-list" id="beta-tasks-list"></div>
+            </div>
+
+            <!-- Department Gamma -->
+            <div class="department-card dept-gamma" id="gamma-card">
+                <div class="dept-header">
+                    <div class="dept-title">🚀 Department Gamma</div>
+                    <div class="dept-status">Let's achieve greatness!</div>
+                </div>
+                
+                <div class="dept-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="gamma-tasks">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="gamma-completed">0</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="gamma-efficiency">100%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" onclick="changeMonth(-1, 'gamma')">❮</button>
+                        <h4 id="gamma-month-year">December 2024</h4>
+                        <button class="nav-btn" onclick="changeMonth(1, 'gamma')">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="gamma-calendar"></div>
+                </div>
+
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-dept="gamma" data-filter="all">All Tasks</button>
+                    <button class="filter-btn" data-dept="gamma" data-filter="low">Low Priority</button>
+                    <button class="filter-btn" data-dept="gamma" data-filter="medium">Medium Priority</button>
+                    <button class="filter-btn" data-dept="gamma" data-filter="high">High Priority</button>
+                </div>
+
+                <div class="task-form">
+                    <h5>Add New Task</h5>
+                    <form onsubmit="addTask(event, 'gamma')">
+                        <div class="form-group">
+                            <label>Task:</label>
+                            <input type="text" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <textarea name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority:</label>
+                            <select name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Add Task</button>
+                    </form>
+                </div>
+                
+                <div class="task-list" id="gamma-tasks-list"></div>
+            </div>
+
+            <!-- Department Delta -->
+            <div class="department-card dept-delta" id="delta-card">
+                <div class="dept-header">
+                    <div class="dept-title">⚡ Department Delta</div>
+                    <div class="dept-status">Excellence awaits!</div>
+                </div>
+                
+                <div class="dept-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="delta-tasks">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="delta-completed">0</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="delta-efficiency">100%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" onclick="changeMonth(-1, 'delta')">❮</button>
+                        <h4 id="delta-month-year">December 2024</h4>
+                        <button class="nav-btn" onclick="changeMonth(1, 'delta')">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="delta-calendar"></div>
+                </div>
+
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-dept="delta" data-filter="all">All Tasks</button>
+                    <button class="filter-btn" data-dept="delta" data-filter="low">Low Priority</button>
+                    <button class="filter-btn" data-dept="delta" data-filter="medium">Medium Priority</button>
+                    <button class="filter-btn" data-dept="delta" data-filter="high">High Priority</button>
+                </div>
+
+                <div class="task-form">
+                    <h5>Add New Task</h5>
+                    <form onsubmit="addTask(event, 'delta')">
+                        <div class="form-group">
+                            <label>Task:</label>
+                            <input type="text" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <textarea name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority:</label>
+                            <select name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Add Task</button>
+                    </form>
+                </div>
+                
+                <div class="task-list" id="delta-tasks-list"></div>
+            </div>
+
+            <!-- Department Epsilon -->
+            <div class="department-card dept-epsilon" id="epsilon-card">
+                <div class="dept-header">
+                    <div class="dept-title">🎯 Department Epsilon</div>
+                    <div class="dept-status">Success is our mission!</div>
+                </div>
+                
+                <div class="dept-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="epsilon-tasks">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="epsilon-completed">0</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="epsilon-efficiency">100%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" onclick="changeMonth(-1, 'epsilon')">❮</button>
+                        <h4 id="epsilon-month-year">December 2024</h4>
+                        <button class="nav-btn" onclick="changeMonth(1, 'epsilon')">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="epsilon-calendar"></div>
+                </div>
+
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-dept="epsilon" data-filter="all">All Tasks</button>
+                    <button class="filter-btn" data-dept="epsilon" data-filter="low">Low Priority</button>
+                    <button class="filter-btn" data-dept="epsilon" data-filter="medium">Medium Priority</button>
+                    <button class="filter-btn" data-dept="epsilon" data-filter="high">High Priority</button>
+                </div>
+
+                <div class="task-form">
+                    <h5>Add New Task</h5>
+                    <form onsubmit="addTask(event, 'epsilon')">
+                        <div class="form-group">
+                            <label>Task:</label>
+                            <input type="text" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <textarea name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority:</label>
+                            <select name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Add Task</button>
+                    </form>
+                </div>
+                
+                <div class="task-list" id="epsilon-tasks-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Edit Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Task</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                <input type="hidden" id="editTaskDept">
+                <input type="hidden" id="editTaskDate">
+                
+                <div class="form-group">
+                    <label>Task:</label>
+                    <input type="text" id="editTaskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="editTaskDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Date:</label>
+                    <input type="date" id="editTaskDateInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Priority:</label>
+                    <select id="editTaskPriority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="editTaskCompleted">
+                        <option value="false">Active</option>
+                        <option value="true">Completed</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firm Productivity Calendar with Rewards</title>
+
+  <div class="main-container">
+    <!-- Your existing header and status panel -->
+    
+    <!-- New Rewards Panel -->
+    <div class="rewards-panel">
+      <h2>🎯 Your Rewards & Achievements</h2>
+      <div class="points-display">
+        <strong>Points:</strong> <span id="userPoints">350</span>
+      </div>
+      <div class="rewards-container">
+        <div class="reward-item">
+          <div class="reward-icon">☕</div>
+          <div>Free Coffee</div>
+          <div><small>50 points</small></div>
+        </div>
+        <div class="reward-item">
+          <div class="reward-icon">🍕</div>
+          <div>1 Free-Meal(upto $2)</div>
+          <div><small>100 points</small></div>
+        </div>
+        <div class="reward-item">
+          <div class="reward-icon">🎁</div>
+          <div>Small Gift Amount</div>
+          <div><small>200 points</small></div>
+        </div>
+        <div class="reward-item">
+          <div class="reward-icon">🏆</div>
+          <div>Certificate of Appreciation</div>
+          <div><small>550 points</small></div>
+        </div>
+        <div class="reward-item">
+          <div class="reward-icon">🕒</div>
+          <div>Half Day Off</div>
+          <div><small>750 points</small></div>
+        </div>
+      </div>
+    </div>
+    
+    <h5>BIGGER TASKS COMPLETED=MORE POINTS</h5>
+   <div class="l">MINIMUM POINTS=5</div>
+    <div class="l">MAXIMUM POINTS=100</div>
+
+
+    <h6>
+        NOTE:if you use your points they get deducted
+    </h6>
+    
+    <!-- Your existing heat containers grid -->
+    
+    <!-- Enhanced Leaderboard -->
+    <div class="leaderboard-enhanced">
+      <h2><span class="crown">👑</span> Employee Leaderboard <span class="crown">👑</span></h2>
+      <div id="enhancedLeaderboard">
+        <div class="leaderboard-item">
+          <div class="leaderboard-rank">1</div>
+          <div class="leaderboard-name">(Alpha)</div>
+          <div class="leaderboard-points">0 pts</div>
+        </div>
+        <div class="leaderboard-item">
+          <div class="leaderboard-rank">2</div>
+          <div class="leaderboard-name">(Gamma)</div>
+          <div class="leaderboard-points">0 pts</div>
+        </div>
+        <div class="leaderboard-item">
+          <div class="leaderboard-rank">3</div>
+          <div class="leaderboard-name">(Beta)</div>
+          <div class="leaderboard-points">0 pts</div>
+        </div>
+        <div class="leaderboard-item">
+          <div class="leaderboard-rank">4</div>
+          <div class="leaderboard-name">(Delta)</div>
+          <div class="leaderboard-points">0 pts</div>
+        </div>
+        <div class="leaderboard-item">
+          <div class="leaderboard-rank">5</div>
+          <div class="leaderboard-name">(Epsilon)</div>
+          <div class="leaderboard-points">0 pts</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Your existing content -->
+  </div>
+
+  <script>
+    // Additional JavaScript for rewards system
+    document.addEventListener('DOMContentLoaded', function() {
+      // Example of how to update points based on task completion
+      function updateUserPoints(points) {
+        const pointsElement = document.getElementById('userPoints');
+        const currentPoints = parseInt(pointsElement.textContent);
+        pointsElement.textContent = currentPoints + points;
+        
+        // Show celebration animation if earned significant points
+        if (points >= 50) {
+          showCelebration(points);
+        }
+      }
+      
+      function showCelebration(points) {
+        // Create celebration effect
+        const celebration = document.createElement('div');
+        celebration.style.position = 'fixed';
+        celebration.style.top = '0';
+        celebration.style.left = '0';
+        celebration.style.width = '100%';
+        celebration.style.height = '100%';
+        celebration.style.background = 'rgba(255,255,255,0.8)';
+        celebration.style.display = 'flex';
+        celebration.style.flexDirection = 'column';
+        celebration.style.justifyContent = 'center';
+        celebration.style.alignItems = 'center';
+        celebration.style.zIndex = '1000';
+        celebration.style.fontSize = '2em';
+        celebration.style.color = '#333';
+        celebration.innerHTML = `
+          <div style="background:white; padding:30px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center;">
+            <div style="font-size:2em; margin-bottom:15px;">🎉</div>
+            <h2>Great Job!</h2>
+            <p>You earned <strong>+${points} points</strong>!</p>
+            <button onclick="this.parentElement.parentElement.remove()" style="margin-top:15px; padding:10px 20px; background:#4facfe; color:white; border:none; border-radius:5px; cursor:pointer;">Continue</button>
+          </div>
+        `;
+        
+        document.body.appendChild(celebration);
+      }
+      
+      // Modify your existing completeTask function to add points
+      const originalCompleteTask = window.completeTask;
+      window.completeTask = function(id) {
+        originalCompleteTask(id);
+        
+        // Award points for task completion (more points for higher task counts)
+        const taskCount = containers[id].tasks;
+        const pointsEarned = 10 + (taskCount * 2); // More points for completing difficult tasks
+        updateUserPoints(pointsEarned);
+      };
+    });
+  </script>
+</body>
+</html>
+
+    <script>
+        // Global state
+        let departmentData = {
+            alpha: { currentMonth: 11, currentYear: 2024, tasks: {}, filter: 'all' },
+            beta: { currentMonth: 11, currentYear: 2024, tasks: {}, filter: 'all' },
+            gamma: { currentMonth: 11, currentYear: 2024, tasks: {}, filter: 'all' },
+            delta: { currentMonth: 11, currentYear: 2024, tasks: {}, filter: 'all' },
+            epsilon: { currentMonth: 11, currentYear: 2024, tasks: {}, filter: 'all' }
+        };
+
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"];
+
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        // Initialize all calendars
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load data from localStorage if available
+            loadFromLocalStorage();
+            
+            // Set today's date in date inputs
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                input.value = today;
+            });
+            
+            // Generate calendars and update displays
+            Object.keys(departmentData).forEach(dept => {
+                generateCalendar(dept);
+                updateTaskList(dept);
+                updateDepartmentStats(dept);
+            });
+            updateSystemStats();
+            
+            // Add event listeners for filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const dept = this.getAttribute('data-dept');
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Update active button
+                    document.querySelectorAll(`.filter-btn[data-dept="${dept}"]`).forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Update filter and refresh
+                    departmentData[dept].filter = filter;
+                    updateTaskList(dept);
+                });
+            });
+            
+            // Add drag and drop event listeners
+            setupDragAndDrop();
+            
+            // Add today's date highlighting
+            highlightToday();
+        });
+
+        function generateCalendar(dept) {
+            const data = departmentData[dept];
+            const firstDay = new Date(data.currentYear, data.currentMonth, 1);
+            const lastDay = new Date(data.currentYear, data.currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+            const today = new Date();
+
+            // Update month/year display
+            document.getElementById(`${dept}-month-year`).textContent = 
+                `${monthNames[data.currentMonth]} ${data.currentYear}`;
+
+            const calendar = document.getElementById(`${dept}-calendar`);
+            calendar.innerHTML = '';
+
+            // Add day headers
+            dayNames.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.classList.add('day-header');
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.classList.add('day-cell');
+                calendar.appendChild(emptyCell);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.classList.add('day-cell');
+                
+                // Check if this is today
+                if (data.currentYear === today.getFullYear() && 
+                    data.currentMonth === today.getMonth() && 
+                    day === today.getDate()) {
+                    dayCell.classList.add('today');
+                }
+                
+                const dayNumber = document.createElement('div');
+                dayNumber.classList.add('day-number');
+                dayNumber.textContent = day;
+                
+                const dateKey = `${data.currentYear}-${String(data.currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const taskCount = data.tasks[dateKey] ? data.tasks[dateKey].filter(task => !task.completed).length : 0;
+                
+                // Apply heat map coloring
+                dayCell.classList.add(getHeatClass(taskCount));
+                
+                if (taskCount > 0) {
+                    const taskCounter = document.createElement('div');
+                    taskCounter.classList.add('task-count');
+                    taskCounter.textContent = taskCount;
+                    dayCell.appendChild(taskCounter);
+                }
+                
+                dayCell.appendChild(dayNumber);
+                dayCell.setAttribute('data-date', dateKey);
+                dayCell.setAttribute('data-dept', dept);
+                
+                calendar.appendChild(dayCell);
+            }
+        }
+
+        function getHeatClass(taskCount) {
+            if (taskCount === 0) return 'heat-0';
+            if (taskCount === 1) return 'heat-1';
+            if (taskCount === 2) return 'heat-2';
+            if (taskCount === 3) return 'heat-3';
+            if (taskCount === 4) return 'heat-4';
+            if (taskCount === 5) return 'heat-5';
+            if (taskCount >= 6 && taskCount <= 10) return 'heat-6';
+            return 'heat-11';
+        }
+
+        function changeMonth(direction, dept) {
+            const data = departmentData[dept];
+            data.currentMonth += direction;
+            
+            if (data.currentMonth > 11) {
+                data.currentMonth = 0;
+                data.currentYear++;
+            } else if (data.currentMonth < 0) {
+                data.currentMonth = 11;
+                data.currentYear--;
+            }
+            
+            generateCalendar(dept);
+            saveToLocalStorage();
+        }
+
+        function addTask(event, dept) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const task = {
+                id: Date.now(),
+                title: formData.get('title'),
+                description: formData.get('description') || '',
+                date: formData.get('date'),
+                priority: formData.get('priority'),
+                completed: false
+            };
+            
+            const dateKey = task.date;
+            if (!departmentData[dept].tasks[dateKey]) {
+                departmentData[dept].tasks[dateKey] = [];
+            }
+            
+            departmentData[dept].tasks[dateKey].push(task);
+            
+            // Reset form
+            event.target.reset();
+            const today = new Date().toISOString().split('T')[0];
+            event.target.querySelector('input[type="date"]').value = today;
+            
+            // Update displays
+            generateCalendar(dept);
+            updateTaskList(dept);
+            updateDepartmentStats(dept);
+            updateSystemStats();
+            saveToLocalStorage();
+        }
+
+        function deleteTask(dept, date, taskId) {
+            const tasks = departmentData[dept].tasks[date];
+            if (tasks) {
+                const index = tasks.findIndex(task => task.id === taskId);
+                if (index !== -1) {
+                    tasks.splice(index, 1);
+                    if (tasks.length === 0) {
+                        delete departmentData[dept].tasks[date];
+                    }
+                }
+            }
+            
+            generateCalendar(dept);
+            updateTaskList(dept);
+            updateDepartmentStats(dept);
+            updateSystemStats();
+            saveToLocalStorage();
+        }
+
+        function toggleTaskComplete(dept, date, taskId) {
+            const tasks = departmentData[dept].tasks[date];
+            if (tasks) {
+                const task = tasks.find(task => task.id === taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                }
+            }
+            
+            generateCalendar(dept);
+            updateTaskList(dept);
+            updateDepartmentStats(dept);
+            updateSystemStats();
+            saveToLocalStorage();
+        }
+
+        function editTask(dept, date, taskId) {
+            const tasks = departmentData[dept].tasks[date];
+            if (tasks) {
+                const task = tasks.find(task => task.id === taskId);
+                if (task) {
+                    // Populate modal form
+                    document.getElementById('editTaskId').value = task.id;
+                    document.getElementById('editTaskDept').value = dept;
+                    document.getElementById('editTaskDate').value = date;
+                    document.getElementById('editTaskTitle').value = task.title;
+                    document.getElementById('editTaskDescription').value = task.description;
+                    document.getElementById('editTaskDateInput').value = task.date;
+                    document.getElementById('editTaskPriority').value = task.priority;
+                    document.getElementById('editTaskCompleted').value = task.completed.toString();
+                    
+                    // Show modal
+                    document.getElementById('taskModal').style.display = 'flex';
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+
+        document.getElementById('editTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const taskId = parseInt(document.getElementById('editTaskId').value);
+            const dept = document.getElementById('editTaskDept').value;
+            const oldDate = document.getElementById('editTaskDate').value;
+            const newDate = document.getElementById('editTaskDateInput').value;
+            
+            // Find the task
+            let tasks = departmentData[dept].tasks[oldDate];
+            if (tasks) {
+                const taskIndex = tasks.findIndex(task => task.id === taskId);
+                if (taskIndex !== -1) {
+                    const task = tasks[taskIndex];
+                    
+                    // Update task properties
+                    task.title = document.getElementById('editTaskTitle').value;
+                    task.description = document.getElementById('editTaskDescription').value;
+                    task.priority = document.getElementById('editTaskPriority').value;
+                    task.completed = document.getElementById('editTaskCompleted').value === 'true';
+                    
+                    // If date changed, move task to new date
+                    if (oldDate !== newDate) {
+                        tasks.splice(taskIndex, 1);
+                        
+                        if (tasks.length === 0) {
+                            delete departmentData[dept].tasks[oldDate];
+                        }
+                        
+                        if (!departmentData[dept].tasks[newDate]) {
+                            departmentData[dept].tasks[newDate] = [];
+                        }
+                        
+                        task.date = newDate;
+                        departmentData[dept].tasks[newDate].push(task);
+                    }
+                    
+                    // Update displays
+                    generateCalendar(dept);
+                    updateTaskList(dept);
+                    updateDepartmentStats(dept);
+                    updateSystemStats();
+                    saveToLocalStorage();
+                    
+                    // Close modal
+                    closeModal();
+                }
+            }
+        });
+
+        function updateTaskList(dept) {
+            const taskList = document.getElementById(`${dept}-tasks-list`);
+            taskList.innerHTML = '';
+            
+            const allTasks = [];
+            Object.entries(departmentData[dept].tasks).forEach(([date, tasks]) => {
+                tasks.forEach(task => {
+                    allTasks.push({...task, date});
+                });
+            });
+            
+            // Sort by date (show upcoming first)
+            allTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Apply filter
+            const filteredTasks = allTasks.filter(task => {
+                if (departmentData[dept].filter === 'all') return true;
+                return task.priority === departmentData[dept].filter;
+            });
+            
+            // Show only next 5 upcoming tasks to save space
+            filteredTasks.slice(0, 5).forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.classList.add('task-item');
+                if (task.completed) {
+                    taskItem.classList.add('completed');
+                }
+                
+                taskItem.setAttribute('draggable', 'true');
+                taskItem.setAttribute('data-task-id', task.id);
+                taskItem.setAttribute('data-dept', dept);
+                taskItem.setAttribute('data-date', task.date);
+                
+                taskItem.innerHTML = `
+                    <div class="task-info">
+                        <div class="task-title">${task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title}</div>
+                        <div class="task-meta">
+                            <span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>
+                            ${task.date} 
+                            ${task.completed ? '<span>✓ Completed</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <button class="complete-btn" onclick="toggleTaskComplete('${dept}', '${task.date}', ${task.id})">${task.completed ? '↻' : '✓'}</button>
+                        <button class="edit-btn" onclick="editTask('${dept}', '${task.date}', ${task.id})">✏️</button>
+                        <button class="delete-btn" onclick="deleteTask('${dept}', '${task.date}', ${task.id})">×</button>
+                    </div>
+                `;
+                taskList.appendChild(taskItem);
+            });
+
+            if (filteredTasks.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.color = '#666';
+                emptyMsg.style.padding = '10px';
+                emptyMsg.textContent = 'No tasks found';
+                taskList.appendChild(emptyMsg);
+            } else if (filteredTasks.length > 5) {
+                const moreItem = document.createElement('div');
+                moreItem.style.textAlign = 'center';
+                moreItem.style.color = '#666';
+                moreItem.style.fontSize = '0.8em';
+                moreItem.style.padding = '5px';
+                moreItem.textContent = `+${filteredTasks.length - 5} more tasks`;
+                taskList.appendChild(moreItem);
+            }
+        }
+
+        function updateDepartmentStats(dept) {
+            const tasks = departmentData[dept].tasks;
+            let activeTasks = 0;
+            let completedTasks = 0;
+            
+            Object.values(tasks).forEach(dayTasks => {
+                dayTasks.forEach(task => {
+                    if (task.completed) {
+                        completedTasks++;
+                    } else {
+                        activeTasks++;
+                    }
+                });
+            });
+            
+            document.getElementById(`${dept}-tasks`).textContent = activeTasks;
+            document.getElementById(`${dept}-completed`).textContent = completedTasks;
+            
+            const efficiency = activeTasks === 0 ? 100 : Math.max(0, 100 - (activeTasks * 5));
+            document.getElementById(`${dept}-efficiency`).textContent = `${efficiency}%`;
+            
+            // Update department status message
+            let statusMsg = "Ready to begin!";
+            if (activeTasks > 5) statusMsg = "Busy schedule!";
+            if (activeTasks > 10) statusMsg = "Heavy workload!";
+            if (completedTasks > activeTasks) statusMsg = "Great progress!";
+            
+            document.querySelector(`#${dept}-card .dept-status`).textContent = statusMsg;
+        }
+
+        function updateSystemStats() {
+            let totalTasks = 0;
+            let completedTasks = 0;
+            
+            Object.values(departmentData).forEach(dept => {
+                Object.values(dept.tasks).forEach(dayTasks => {
+                    dayTasks.forEach(task => {
+                        if (task.completed) {
+                            completedTasks++;
+                        } else {
+                            totalTasks++;
+                        }
+                    });
+                });
+            });
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            
+            let status = "✨ Optimal Performance";
+            if (totalTasks > 50) status = "⚠️ High Load";
+            if (totalTasks > 150) status = "🔥 Critical Load";
+            if (completedTasks > totalTasks * 0.7) status = "✅ Great Progress";
+            
+            document.getElementById('systemStatus').textContent = status;
+        }
+
+        function setupDragAndDrop() {
+            // Add drag events to task items
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.classList.contains('task-item')) {
+                    e.target.classList.add('dragging');
+                    const taskId = e.target.getAttribute('data-task-id');
+                    const dept = e.target.getAttribute('data-dept');
+                    const date = e.target.getAttribute('data-date');
+                    
+                    e.dataTransfer.setData('taskId', taskId);
+                    e.dataTransfer.setData('dept', dept);
+                    e.dataTransfer.setData('date', date);
+                }
+            });
+            
+            document.addEventListener('dragend', function(e) {
+                if (e.target.classList.contains('task-item')) {
+                    e.target.classList.remove('dragging');
+                }
+            });
+            
+            // Add drop events to day cells
+            document.addEventListener('dragover', function(e) {
+                if (e.target.classList.contains('day-cell')) {
+                    e.preventDefault();
+                    e.target.classList.add('drag-over');
+                }
+            });
+            
+            document.addEventListener('dragleave', function(e) {
+                if (e.target.classList.contains('day-cell')) {
+                    e.target.classList.remove('drag-over');
+                }
+            });
+            
+            document.addEventListener('drop', function(e) {
+                if (e.target.classList.contains('day-cell')) {
+                    e.preventDefault();
+                    e.target.classList.remove('drag-over');
+                    
+                    const taskId = parseInt(e.dataTransfer.getData('taskId'));
+                    const dept = e.dataTransfer.getData('dept');
+                    const oldDate = e.dataTransfer.getData('date');
+                    const newDate = e.target.getAttribute('data-date');
+                    
+                    // Move task to new date
+                    const tasks = departmentData[dept].tasks[oldDate];
+                    if (tasks) {
+                        const taskIndex = tasks.findIndex(task => task.id === taskId);
+                        if (taskIndex !== -1) {
+                            const task = tasks[taskIndex];
+                            
+                            tasks.splice(taskIndex, 1);
+                            
+                            if (tasks.length === 0) {
+                                delete departmentData[dept].tasks[oldDate];
+                            }
+                            
+                            if (!departmentData[dept].tasks[newDate]) {
+                                departmentData[dept].tasks[newDate] = [];
+                            }
+                            
+                            task.date = newDate;
+                            departmentData[dept].tasks[newDate].push(task);
+                            
+                            // Update displays
+                            generateCalendar(dept);
+                            updateTaskList(dept);
+                            updateDepartmentStats(dept);
+                            updateSystemStats();
+                            saveToLocalStorage();
+                        }
+                    }
+                }
+            });
+        }
+
+        function highlightToday() {
+            const today = new Date();
+            const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            Object.keys(departmentData).forEach(dept => {
+                const dayCell = document.querySelector(`#${dept}-calendar .day-cell[data-date="${todayString}"]`);
+                if (dayCell) {
+                    dayCell.classList.add('today');
+                }
+            });
+        }
+
+        function saveToLocalStorage() {
+            const dataToSave = {
+                departmentData: departmentData,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem('caProductivityCalendar', JSON.stringify(dataToSave));
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('caProductivityCalendar');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    
+                    // Check if data is not too old (e.g., less than 30 days)
+                    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+                    if (new Date().getTime() - parsedData.timestamp < THIRTY_DAYS) {
+                        departmentData = parsedData.departmentData;
+                    }
+                } catch (e) {
+                    console.error('Error loading saved data:', e);
+                }
+            }
+        }
+
+        // Close modal if clicked outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('taskModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</body>
+</html>
